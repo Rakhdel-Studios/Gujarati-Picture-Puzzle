@@ -1,0 +1,78 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import AdSlot from '../components/AdSlot.astro';
+
+const levels = (await getCollection('levels')).sort((a, b) => a.data.order - b.data.order);
+// Ads on the index sit BETWEEN groups of levels — never beside the board.
+const half = Math.ceil(levels.length / 2);
+---
+
+<Base
+  title="ચાર ચિત્ર એક શબ્દ — ગુજરાતી શબ્દ રમત"
+  description="ચાર ચિત્ર જુઓ, એક ગુજરાતી શબ્દ બનાવો. મોટા અક્ષર, ઘડિયાળ નહીં, દબાણ નહીં. A large-type Gujarati word game with no timers and no scores."
+>
+  <h1>
+    ચાર ચિત્ર, એક શબ્દ
+    <span class="en">Four pictures, one word</span>
+  </h1>
+
+  <p class="lede">
+    ચાર ચિત્રો જુઓ અને તે બધાં જે એક ગુજરાતી શબ્દ તરફ દોરી જાય છે તે અક્ષરો
+    ગોઠવીને બનાવો. <b>ઘડિયાળ નથી, જીવ નથી, ગુણ નથી.</b> ખોટો જવાબ આપો તો કશું
+    ગુમાવતા નથી — શાંતિથી ફરી ગોઠવો.
+    <span class="en">
+      Look at four pictures and build the one Gujarati word they share.
+      No timers, no lives, no scores. A wrong answer costs you nothing —
+      just move the letters around until it reads right.
+    </span>
+  </p>
+
+  <h2>કોયડા<span class="en">Puzzles — easiest first</span></h2>
+
+  <ol class="levels">
+    {
+      levels.slice(0, half).map((level, i) => (
+        <li>
+          <a class="level-link" href={`/puzzle/${level.data.slug}/`}>
+            <span class="level-num" aria-hidden="true">{i + 1}</span>
+            <span>
+              <span class="level-word" lang="gu">{level.data.gujarati}</span>
+              <span class="en">{level.data.english}</span>
+            </span>
+            <span class="level-tiles">{level.data.tiles.length} અક્ષર</span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+
+  {/* Between levels: one of the two allowed ad placements. See AdSlot.astro. */}
+  <AdSlot placement="between-levels" />
+
+  <ol class="levels" start={half + 1}>
+    {
+      levels.slice(half).map((level, i) => (
+        <li>
+          <a class="level-link" href={`/puzzle/${level.data.slug}/`}>
+            <span class="level-num" aria-hidden="true">{half + i + 1}</span>
+            <span>
+              <span class="level-word" lang="gu">{level.data.gujarati}</span>
+              <span class="en">{level.data.english}</span>
+            </span>
+            <span class="level-tiles">{level.data.tiles.length} અક્ષર</span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</Base>
+
+<style>
+  .lede {
+    font-size: 0.95em;
+  }
+  h2 {
+    margin-top: 2rem;
+  }
+</style>

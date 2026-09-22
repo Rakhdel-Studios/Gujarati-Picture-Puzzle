@@ -1,0 +1,59 @@
+---
+import '../styles/global.css';
+import AdSlot from '../components/AdSlot.astro';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<html lang="gu">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- Mukta Vaani is a Gujarati-native superfamily; Noto Sans Gujarati is the
+         fallback if it ever fails to load. Both carry the full conjunct set. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Mukta+Vaani:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;600;700&display=swap"
+    />
+  </head>
+  <body>
+    <header class="site-head">
+      <div class="wrap">
+        <a class="brand" href="/">ચાર ચિત્ર એક શબ્દ</a>
+        <nav class="site-nav" aria-label="મુખ્ય / Main">
+          <a href="/">રમો<span class="en">Play</span></a>
+          <a href="/about/">વિશે<span class="en">About</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <slot />
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap">
+        {/* Footer is one of the two allowed ad placements. See AdSlot.astro. */}
+        <AdSlot placement="footer" />
+        <p>
+          ચાર ચિત્ર એક શબ્દ — ગુજરાતી શબ્દ રમત.
+          <span class="en">Four Pictures One Word — a Gujarati word game. No timers, no scores, no pressure.</span>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

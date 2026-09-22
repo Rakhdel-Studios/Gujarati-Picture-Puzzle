@@ -1,0 +1,156 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Board from '../../components/Board.astro';
+import { senses } from '../../lib/senses.mjs';
+
+export async function getStaticPaths() {
+  const levels = (await getCollection('levels')).sort((a, b) => a.data.order - b.data.order);
+  return levels.map((level, i) => ({
+    params: { slug: level.data.slug },
+    props: {
+      level: level.data,
+      number: i + 1,
+      total: levels.length,
+      next: levels[i + 1]?.data.slug ?? null,
+    },
+  }));
+}
+
+const { level, number, total, next } = Astro.props;
+const nextHref = next ? `/puzzle/${next}/` : null;
+
+// `definition` is a full dictionary gloss (up to 508 chars / 27 senses), so it
+// is rendered as a numbered entry rather than dumped as one paragraph. The
+// first five senses carry the meaning; the tail goes in a quieter run-on line.
+const all = senses(level.definition);
+const main = all.slice(0, 5);
+const rest = all.slice(5);
+
+// NOTE: `english` is identical to `slug` on every record, so it is rendered
+// once, as the translation. Never print both as if they were separate facts.
+const blurb = `${level.gujarati} (${level.english}) — ${main.slice(0, 3).join(', ')}. ચાર ચિત્ર જુઓ અને ગુજરાતી શબ્દ બનાવો.`;
+---
+
+<Base title={`${level.gujarati} — ચાર ચિત્ર એક શબ્દ`} description={blurb}>
+  <p class="eyebrow">
+    કોયડો {number} / {total}
+    <span class="en">Puzzle {number} of {total}</span>
+  </p>
+
+  <Board
+    slug={level.slug}
+    gujarati={level.gujarati}
+    tiles={level.tiles}
+    decoys={level.decoys}
+    nextHref={nextHref}
+  />
+
+  {/* The word's dictionary entry — the real content on this page, and what
+      makes it something other than a bare image grid. It sits BELOW the board,
+      so it never pushes the game down, and it is always visible (no toggle):
+      it doubles as the hint for a stuck player, and this game has no score to
+      cheat at. Rendered as a numbered entry because the source gloss runs to
+      27 senses on some words. */}
+  <section class="definition" aria-labelledby="meaning">
+    <h2 id="meaning">શબ્દનો અર્થ<span class="en">Meaning of the word</span></h2>
+
+    <p class="headword" lang="gu">{level.gujarati}</p>
+    <p class="headword-meta">
+      <span lang="en">{level.english}</span> · {level.tiles.length} અક્ષર ·
+      <span lang="gu">{level.tiles.join(' · ')}</span>
+    </p>
+
+    <ol class="senses" lang="gu">
+      {main.map((sense) => <li>{sense}</li>)}
+    </ol>
+
+    {
+      rest.length > 0 && (
+        <p class="senses-more" lang="gu">
+          <b>બીજા અર્થ<span class="en">Further senses</span></b>
+          {rest.join(', ')}.
+        </p>
+      )
+    }
+  </section>
+
+  <p class="about-word">
+    <b lang="gu">{level.gujarati}</b> શબ્દમાં {level.tiles.length} અક્ષર છે, અને
+    ઉપરનાં ચારેય ચિત્રો આ એક જ શબ્દ તરફ દોરી જાય છે.
+    <span class="en">
+      The Gujarati word for “{level.english}” is written with {level.tiles.length}
+      aksharas, and all four pictures above point to this one word.
+    </span>
+  </p>
+
+  {
+    level.credits.length > 0 && (
+      <p class="credits">
+        ચિત્ર શ્રેય / Image credits:{' '}
+        {level.credits
+          .map((c) => (typeof c === 'string' ? c : [c.title, c.creator, c.license].filter(Boolean).join(' — ')))
+          .join(' · ')}
+      </p>
+    )
+  }
+
+  <nav class="pager" aria-label="કોયડા / Puzzles">
+    <a class="btn" href="/">બધા કોયડા<span class="en">All puzzles</span></a>
+    {nextHref && <a class="btn btn-primary" href={nextHref}>આગળનો →<span class="en">Next</span></a>}
+  </nav>
+</Base>
+
+<style>
+  .eyebrow {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  .headword {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin: 0;
+  }
+  .headword-meta {
+    font-size: 0.72em;
+    color: var(--ink-soft);
+    margin: 0 0 0.8em;
+  }
+  .senses {
+    margin: 0;
+    padding-inline-start: 1.6em;
+  }
+  .senses li {
+    margin-bottom: 0.45em;
+  }
+  .senses-more {
+    font-size: 0.82em;
+    color: var(--ink-soft);
+    margin: 1em 0 0;
+    padding-top: 0.8em;
+    border-top: 2px solid var(--line);
+  }
+  .senses-more b {
+    display: block;
+    color: var(--ink);
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .about-word {
+    font-size: 0.85em;
+    color: var(--ink-soft);
+  }
+  .pager {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap);
+    margin-top: 2rem;
+  }
+  .pager .btn {
+    flex: 1 1 12rem;
+  }
+</style>

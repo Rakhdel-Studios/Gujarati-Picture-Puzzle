@@ -1,0 +1,394 @@
+---
+/**
+ * The ONLY interactive island on the site. Plain <script> — no framework.
+ *
+ * Two rules baked in here on purpose:
+ *  1. `tiles` and `decoys` arrive PRE-SPLIT into aksharas from the pipeline.
+ *     They are rendered verbatim. Nothing in this file splits Gujarati text.
+ *  2. No timers, no lives, no streaks, no penalties. A wrong answer just
+ *     doesn't lock in; the player fixes it whenever they like.
+ */
+interface Props {
+  slug: string;
+  gujarati: string;
+  tiles: string[];
+  decoys: string[];
+  nextHref: string | null;
+}
+const { slug, gujarati, tiles, decoys, nextHref } = Astro.props;
+
+// Seeded shuffle at BUILD time: stable across reloads, no client-side shuffle
+// code, and no visible reordering flash when the island hydrates.
+function mulberry32(a: number) {
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const seed = [...slug].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7);
+const rnd = mulberry32(seed);
+const rack = [...tiles, ...decoys];
+for (let i = rack.length - 1; i > 0; i--) {
+  const j = Math.floor(rnd() * (i + 1));
+  [rack[i], rack[j]] = [rack[j], rack[i]];
+}
+---
+
+<section class="board" data-answer={tiles.join('')} data-slots={tiles.length}>
+  <h2 class="sr-only">કોયડો / Puzzle</h2>
+
+  <div class="pics">
+    {
+      [1, 2, 3, 4].map((n) => (
+        <img
+          src={`/images/${slug}/${n}.webp`}
+          alt={`સંકેત ચિત્ર ${n} / Clue picture ${n}`}
+          width="600"
+          height="600"
+          loading={n > 2 ? 'lazy' : 'eager'}
+          decoding="async"
+        />
+      ))
+    }
+  </div>
+
+  <p class="prompt">
+    આ ચાર ચિત્રોનો શબ્દ બનાવો
+    <span class="en">Build the word these four pictures share</span>
+  </p>
+
+  <!-- Answer slots. Always real buttons: tap a filled one to take the tile back. -->
+  <div class="slots" role="group" aria-label="જવાબની જગ્યાઓ / Answer slots">
+    {
+      tiles.map((_, i) => (
+        <button type="button" class="slot" data-slot={i} aria-label={`જગ્યા ${i + 1} — ખાલી / Slot ${i + 1}, empty`}>
+          <span class="slot-glyph"></span>
+        </button>
+      ))
+    }
+  </div>
+
+  <p class="status" role="status" aria-live="polite"></p>
+
+  <div class="rack" role="group" aria-label="અક્ષરો / Letters">
+    {
+      rack.map((glyph, i) => (
+        <button type="button" class="tile" data-tile={i} data-glyph={glyph}>
+          {glyph}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="controls">
+    <button type="button" class="btn" data-clear>
+      બધું કાઢો<span class="en">Clear all</span>
+    </button>
+    <!-- The hint: no gated hint system, the dictionary entry is just below. -->
+    <a class="btn" href="#meaning">અટકી ગયા? અર્થ જુઓ<span class="en">Stuck? See the meaning</span></a>
+  </div>
+
+  <div class="win" hidden>
+    <p class="win-mark" aria-hidden="true">✓</p>
+    <p class="win-word" lang="gu">{gujarati}</p>
+    <p class="win-text">
+      સરસ! બરાબર જવાબ.
+      <span class="en">Well done — that's the word.</span>
+    </p>
+    {
+      nextHref ? (
+        <a class="btn btn-primary" href={nextHref}>
+          આગળનો કોયડો →<span class="en">Next puzzle</span>
+        </a>
+      ) : (
+        <a class="btn btn-primary" href="/">
+          બધા કોયડા →<span class="en">All puzzles</span>
+        </a>
+      )
+    }
+    <button type="button" class="btn" data-again>
+      ફરી રમો<span class="en">Play again</span>
+    </button>
+  </div>
+</section>
+
+<script>
+  const board = document.querySelector<HTMLElement>('.board');
+  if (board) {
+    const answer = board.dataset.answer ?? '';
+    const slots = [...board.querySelectorAll<HTMLButtonElement>('.slot')];
+    const tiles = [...board.querySelectorAll<HTMLButtonElement>('.tile')];
+    const status = board.querySelector<HTMLElement>('.status')!;
+    const win = board.querySelector<HTMLElement>('.win')!;
+    // slot index -> rack tile index currently sitting in it
+    const placed: (number | null)[] = slots.map(() => null);
+
+    const glyphOf = (t: HTMLButtonElement) => t.dataset.glyph ?? '';
+
+    function paint() {
+      slots.forEach((slot, i) => {
+        const t = placed[i];
+        const glyph = t === null ? '' : glyphOf(tiles[t]);
+        slot.querySelector('.slot-glyph')!.textContent = glyph;
+        slot.classList.toggle('filled', t !== null);
+        slot.setAttribute(
+          'aria-label',
+          t === null
+            ? `જગ્યા ${i + 1} — ખાલી / Slot ${i + 1}, empty`
+            : `જગ્યા ${i + 1} — ${glyph}, પાછું લેવા દબાવો / Slot ${i + 1}, ${glyph}, press to take back`
+        );
+      });
+      tiles.forEach((tile, i) => {
+        const used = placed.includes(i);
+        tile.classList.toggle('used', used);
+        tile.disabled = used;
+      });
+    }
+
+    function setState(kind: 'idle' | 'wrong' | 'correct', message = '') {
+      board.classList.remove('is-wrong', 'is-correct');
+      if (kind !== 'idle') board.classList.add(`is-${kind}`);
+      status.textContent = message;
+    }
+
+    function check() {
+      if (placed.some((p) => p === null)) {
+        setState('idle');
+        return;
+      }
+      const guess = placed.map((p) => glyphOf(tiles[p!])).join('');
+      if (guess === answer) {
+        setState('correct', '✓ સાચું! / Correct!');
+        win.hidden = false;
+        win.querySelector<HTMLElement>('.btn')?.focus();
+      } else {
+        // No penalty. Nothing is lost, nothing locks. Just say so and wait.
+        setState('wrong', '✗ હજી બરાબર નથી — કોઈ પણ અક્ષર દબાવીને પાછો લો. / Not yet — tap any letter to take it back.');
+      }
+    }
+
+    function place(tileIndex: number) {
+      const free = placed.indexOf(null);
+      if (free === -1) return;
+      placed[free] = tileIndex;
+      paint();
+      // Keep focus somewhere real: the slot that just received the tile.
+      slots[free].focus();
+      check();
+    }
+
+    function takeBack(slotIndex: number) {
+      const t = placed[slotIndex];
+      if (t === null) return;
+      placed[slotIndex] = null;
+      win.hidden = true;
+      paint();
+      tiles[t].focus();
+      setState('idle');
+    }
+
+    tiles.forEach((tile, i) => tile.addEventListener('click', () => place(i)));
+    slots.forEach((slot, i) => slot.addEventListener('click', () => takeBack(i)));
+
+    function clearAll() {
+      placed.fill(null);
+      win.hidden = true;
+      paint();
+      setState('idle');
+    }
+    board.querySelector<HTMLButtonElement>('[data-clear]')?.addEventListener('click', () => {
+      clearAll();
+      tiles.find((t) => !t.disabled)?.focus();
+    });
+    board.querySelector<HTMLButtonElement>('[data-again]')?.addEventListener('click', () => {
+      clearAll();
+      tiles[0].focus();
+    });
+
+    paint();
+  }
+</script>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .pics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .pics img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    border: 3px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: #eee;
+  }
+
+  .prompt {
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  /* --- answer slots ------------------------------------------------------- */
+  .slots {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 0.75rem;
+  }
+  .slot {
+    width: 84px;
+    height: 84px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    font-size: 2.5rem;
+    line-height: 1;
+    border-style: dashed;
+    border-color: var(--line);
+    background: #f4f1ea;
+  }
+  .slot.filled {
+    border-style: solid;
+    border-color: var(--line-strong);
+    background: var(--card);
+  }
+
+  /* State is never signalled by colour alone: border STYLE and a text/glyph
+     marker change too, so it reads in greyscale and for colour-blind players. */
+  .is-wrong .slot.filled {
+    border-style: dotted;
+    border-width: 4px;
+    border-color: var(--warn);
+    background: var(--warn-soft);
+  }
+  .is-correct .slot.filled {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    border-width: 4px;
+  }
+
+  .status {
+    text-align: center;
+    min-height: 3.2em;
+    font-size: 0.82em;
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+  }
+  .is-wrong .status {
+    color: var(--warn);
+  }
+  .is-correct .status {
+    color: var(--accent);
+  }
+
+  /* --- letter rack -------------------------------------------------------- */
+  .rack {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px; /* generous: mis-taps are the main frustration for this audience */
+    padding: 1rem 0.5rem;
+    background: var(--card);
+    border: 3px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .tile {
+    width: 84px;
+    height: 84px;
+    padding: 0;
+    font-size: 2.5rem;
+    line-height: 1;
+    font-weight: 600;
+    box-shadow: 0 4px 0 var(--line);
+  }
+  .tile:hover:not(:disabled) {
+    background: var(--accent-soft);
+  }
+  .tile:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--line);
+  }
+  .tile.used {
+    color: transparent;
+    background: #eae6dd;
+    border-style: dashed;
+    border-color: var(--line);
+    box-shadow: none;
+    cursor: default;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--gap);
+    margin-top: 1.25rem;
+  }
+
+  /* --- win panel ---------------------------------------------------------- */
+  .win {
+    margin-top: 1.5rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    background: var(--accent-soft);
+    border: 4px solid var(--accent);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .win[hidden] {
+    display: none;
+  }
+  .win-mark {
+    margin: 0;
+    font-size: 2.6rem;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .win-word {
+    margin: 0;
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .win-text {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  /* One-handed at 400px: everything still clears the 64px target. */
+  @media (max-width: 420px) {
+    .slot,
+    .tile {
+      width: 72px;
+      height: 72px;
+      font-size: 2.1rem;
+    }
+    .slots {
+      gap: 10px;
+    }
+    .rack {
+      gap: 12px;
+    }
+  }
+</style>

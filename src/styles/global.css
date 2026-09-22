@@ -1,0 +1,257 @@
+/* ---------------------------------------------------------------------------
+   Senior-first design tokens. These are not decoration — they are the product.
+   Do not shrink type, touch targets or contrast to fit more on screen.
+   --------------------------------------------------------------------------- */
+:root {
+  --ink: #17211f;
+  --ink-soft: #3d4b47;
+  --paper: #fbf8f2;
+  --card: #ffffff;
+  --line: #c2ccc8;
+  --line-strong: #17211f;
+  --accent: #0a5c50; /* deep teal, 8.9:1 on --paper */
+  --accent-soft: #e2f0ec;
+  --warn: #8a3b0b; /* burnt amber, 7.3:1 on --paper */
+  --warn-soft: #fbeade;
+  --focus: #1447d6;
+
+  --gu: 'Mukta Vaani', 'Noto Sans Gujarati', 'Shruti', 'Nirmala UI', sans-serif;
+  --step: clamp(1.5rem, 1.3rem + 0.9vw, 1.75rem); /* >= 24px base, never less */
+  --tap: 64px; /* minimum touch target, everywhere */
+  --gap: 0.9rem;
+  --radius: 14px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--gu);
+  font-size: var(--step);
+  line-height: 1.7;
+}
+
+/* Gujarati needs the extra leading; conjuncts stack above and below the line. */
+:lang(gu) {
+  line-height: 1.8;
+}
+
+.wrap {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.35;
+  margin: 0 0 0.6em;
+  font-weight: 700;
+}
+h1 {
+  font-size: 1.9em;
+}
+h2 {
+  font-size: 1.4em;
+}
+p {
+  margin: 0 0 1em;
+}
+
+.en {
+  font-size: 0.7em;
+  color: var(--ink-soft);
+  font-weight: 500;
+  display: block;
+  letter-spacing: 0.01em;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 2px;
+}
+
+/* One focus style, always visible, never removed. */
+:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* --- shared big-button base: every tappable thing clears 64px ------------- */
+.btn,
+.tile,
+.slot {
+  font-family: inherit;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  border-radius: var(--radius);
+  border: 3px solid var(--line-strong);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.btn {
+  font-size: 1em;
+  font-weight: 600;
+  padding: 0.6em 1.2em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  text-decoration: none;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn:hover {
+  background: var(--accent-soft);
+}
+.btn-primary:hover {
+  background: #084d43;
+}
+
+/* --- site chrome ---------------------------------------------------------- */
+.site-head {
+  background: var(--card);
+  border-bottom: 3px solid var(--line-strong);
+}
+.site-head .wrap {
+  padding-block: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+.brand {
+  font-size: 1.15em;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+}
+.site-nav {
+  display: flex;
+  gap: 1rem;
+  margin-inline-start: auto;
+}
+.site-nav a {
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 0.5rem;
+  font-size: 0.85em;
+}
+
+.site-foot {
+  border-top: 3px solid var(--line);
+  margin-top: 2.5rem;
+  font-size: 0.8em;
+  color: var(--ink-soft);
+}
+
+/* --- level list ----------------------------------------------------------- */
+.levels {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--gap);
+}
+.level-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 88px;
+  padding: 0.75rem 1rem;
+  background: var(--card);
+  border: 3px solid var(--line-strong);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--ink);
+}
+.level-link:hover {
+  background: var(--accent-soft);
+}
+.level-num {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85em;
+}
+.level-word {
+  font-size: 1.15em;
+  font-weight: 700;
+}
+.level-tiles {
+  margin-inline-start: auto;
+  font-size: 0.72em;
+  color: var(--ink-soft);
+  flex: none;
+}
+
+/* --- definition card (the real content; also what keeps ads legitimate) --- */
+.definition {
+  background: var(--card);
+  border: 3px solid var(--line);
+  border-inline-start: 10px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  margin: 1.5rem 0;
+}
+.definition h2 {
+  font-size: 1.1em;
+  margin-bottom: 0.4em;
+}
+.definition dl {
+  margin: 0;
+}
+.definition dt {
+  font-size: 0.72em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.8em;
+}
+.definition dd {
+  margin: 0.1em 0 0;
+}
+
+.credits {
+  font-size: 0.7em;
+  color: var(--ink-soft);
+  margin-top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

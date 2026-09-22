@@ -1,0 +1,46 @@
+---
+/**
+ * PLACEHOLDER ONLY — no ad network code is loaded yet.
+ *
+ * PLACEMENT RULE (deliberate, do not "optimise" this away):
+ *   Ads go in the FOOTER, or BETWEEN levels on the index page. Never inside the
+ *   play area, and never adjacent to it.
+ *
+ * Why: the players are seniors. Mis-taps are the single biggest frustration
+ * in this audience, and seniors are disproportionately targeted by scam
+ * creatives. An ad unit next to the tile rack will eat taps meant for tiles,
+ * throw away a player's progress, and occasionally drop them on a fraud page.
+ * That costs far more — in churn and in harm — than the impression earns.
+ *
+ * When wiring a network: keep this component as the only insertion point, keep
+ * the reserved box so nothing reflows under a finger, and keep the two allowed
+ * placements below as the only allowed values.
+ */
+interface Props {
+  placement: 'footer' | 'between-levels';
+}
+const { placement } = Astro.props;
+---
+
+<aside class="ad-slot" data-placement={placement} aria-label="જાહેરાત / Advertisement">
+  <span class="ad-slot-label">જાહેરાત · Advertisement</span>
+</aside>
+
+<style>
+  /* Reserved height so an arriving ad never reflows content under a finger. */
+  .ad-slot {
+    display: grid;
+    place-items: center;
+    min-height: 100px;
+    margin: 2rem 0;
+    border: 3px dashed var(--line);
+    border-radius: var(--radius);
+    background: #f2eee6;
+    color: var(--ink-soft);
+  }
+  .ad-slot-label {
+    font-size: 0.68em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+</style>
