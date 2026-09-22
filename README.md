@@ -106,6 +106,33 @@ to cheat at, so nothing is lost by it being readable.
 The reasoning is in the component's comment; it is a safety constraint for this
 audience, not a layout preference.
 
+## Licence
+
+Two different things ship in this repo, under two different licences.
+
+| What | Where | Licence |
+| ---- | ----- | ------- |
+| Code — Astro components, `src/lib`, `scripts/`, config | everything except `public/images/` | **MIT** (see `LICENSE`) |
+| Puzzle artwork — the 348 generated `.webp` images | `public/images/` | **CC BY 4.0** |
+
+The artwork was generated with **FLUX.2-klein-4B**, which is released under
+Apache-2.0 — a licence that places no restriction on the images the model
+produces, so the outputs are ours to license. We put them under CC BY 4.0
+rather than MIT because MIT is a software licence and says nothing useful about
+pictures; CC BY is the right instrument for creative assets. Reuse them for
+anything, including commercially — just credit *Rakhdel Studios*.
+
+Per-image provenance (prompt, seed, model, licence) is recorded in the data
+pipeline's `dist/meta.json`, not here.
+
+No third-party photography ships in this repo. Some CC-licensed Openverse stock
+exists upstream in the pipeline, but it is gated behind an explicit
+`--include-openverse` flag and none of it reached this export — which is why
+`credits` is empty on every level.
+
+`src/data/levels.json` is generated data: the Gujarati words and definitions
+derive from an open Gujarati lexical dataset, restructured by the pipeline.
+
 ## Deploy
 
 `.github/workflows/deploy.yml` builds on push to `main` and deploys to GitHub
