@@ -109,6 +109,15 @@ const blurb = `${level.gujarati} (${level.english}) — ${main.slice(0, 3).join(
     text-align: center;
     margin-bottom: 1rem;
   }
+  @media (max-width: 560px), (max-height: 560px) {
+    .eyebrow {
+      font-size: 0.6em;
+      margin-bottom: 0.35rem;
+    }
+    .eyebrow .en {
+      display: none;
+    }
+  }
   .headword {
     font-size: 1.5em;
     font-weight: 700;

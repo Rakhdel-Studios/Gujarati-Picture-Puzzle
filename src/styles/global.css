@@ -20,6 +20,10 @@
   --tap: 64px; /* minimum touch target, everywhere */
   --gap: 0.9rem;
   --radius: 14px;
+  /* Everything above the board on a puzzle page (site header + page padding +
+     the "puzzle n of m" line). The board subtracts it from 100svh so the
+     picture grid can be sized from the space that is actually left. */
+  --chrome: 8rem;
 }
 
 *,
@@ -51,6 +55,10 @@ body {
   max-width: 44rem;
   margin: 0 auto;
   padding: 1.25rem 1rem 3rem;
+  /* Notched / rounded devices: never let content sit under the cutout or the
+     home indicator. env() is 0 where there is no inset. */
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+  padding-bottom: calc(3rem + env(safe-area-inset-bottom));
 }
 
 h1,
@@ -121,6 +129,11 @@ a {
   border-color: var(--accent);
   color: #fff;
 }
+/* The English gloss keeps --ink-soft everywhere else, which is dark grey — on
+   the teal primary button that is barely legible. Tint it instead: 6.4:1. */
+.btn-primary .en {
+  color: #cfe4de;
+}
 .btn:hover {
   background: var(--accent-soft);
 }
@@ -132,6 +145,7 @@ a {
 .site-head {
   background: var(--card);
   border-bottom: 3px solid var(--line-strong);
+  padding-top: env(safe-area-inset-top);
 }
 .site-head .wrap {
   padding-block: 0.9rem;
@@ -243,6 +257,47 @@ a {
   font-size: 0.7em;
   color: var(--ink-soft);
   margin-top: 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Phones. The site chrome was eating 245px of a 568px screen — more than the
+   pictures — because the nav wrapped onto its own line and every nav label
+   carried a block-level English gloss under it. One row, no glosses.
+   --------------------------------------------------------------------------- */
+@media (max-width: 560px), (max-height: 560px) {
+  :root {
+    --chrome: 6.9rem;
+  }
+  .wrap {
+    padding-top: 0.6rem;
+  }
+  .site-head .wrap {
+    padding-block: 0;
+    height: 3.5rem;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+  }
+  .site-head .en {
+    display: none;
+  }
+  .brand {
+    font-size: 0.92em;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .site-nav {
+    flex: none;
+    gap: 0.2rem;
+  }
+  /* Site nav is chrome, not gameplay: 48px still clears WCAG 2.5.5 (AAA, 44px).
+     Every control you actually play with stays at --tap (64px). */
+  .site-nav a {
+    min-height: 48px;
+    font-size: 0.75em;
+    padding-inline: 0.45rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

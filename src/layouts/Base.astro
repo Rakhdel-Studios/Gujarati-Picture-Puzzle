@@ -13,7 +13,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 <html lang="gu">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -21,6 +21,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!-- Installable: an icon on the home screen beats remembering a URL, and
+         the levels you have played keep working with no connection. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0a5c50" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ચાર ચિત્ર" />
     <!-- Mukta Vaani is a Gujarati-native superfamily; Noto Sans Gujarati is the
          fallback if it ever fails to load. Both carry the full conjunct set. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -55,5 +64,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         </p>
       </div>
     </footer>
+
+    <script is:inline>
+      // updateViaCache:'none' keeps the HTTP cache out of the update check, so
+      // a redeploy is picked up on the next visit rather than in up to 24h.
+      if ('serviceWorker' in navigator) {
+        addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

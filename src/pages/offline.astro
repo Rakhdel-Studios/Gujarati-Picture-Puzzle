@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+
+// Shown by the service worker when a page is asked for that has never been
+// visited and the device is offline. Being honest beats a broken-looking page.
+---
+
+<Base
+  title="ઑફલાઇન — ચાર ચિત્ર એક શબ્દ"
+  description="આ કોયડો હજી આ ફોનમાં ઊતર્યો નથી. ઇન્ટરનેટ જોડાય પછી ફરી પ્રયત્ન કરો."
+>
+  <h1>
+    હમણાં ઇન્ટરનેટ નથી
+    <span class="en">You are offline</span>
+  </h1>
+
+  <p>
+    આ કોયડો હજી આ ફોનમાં ઊતર્યો નથી, એટલે અત્યારે ખૂલશે નહીં. તમે પહેલાં રમેલા
+    કોયડા ઇન્ટરનેટ વગર પણ ચાલે છે.
+    <span class="en">
+      This puzzle has not been saved onto this phone yet, so it cannot open
+      right now. Puzzles you have already played still work without internet.
+    </span>
+  </p>
+
+  <p>
+    ઇન્ટરનેટ જોડાય પછી આ પાનું ફરી ખોલો.
+    <span class="en">Open this page again once you are back online.</span>
+  </p>
+
+  <p class="offline-actions">
+    <a class="btn btn-primary" href="/">બધા કોયડા<span class="en">All puzzles</span></a>
+  </p>
+</Base>
+
+<style>
+  .offline-actions {
+    margin-top: 2rem;
+  }
+</style>

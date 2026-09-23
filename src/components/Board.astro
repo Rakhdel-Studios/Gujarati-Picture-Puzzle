@@ -37,10 +37,17 @@ for (let i = rack.length - 1; i > 0; i--) {
 }
 ---
 
-<section class="board" data-answer={tiles.join('')} data-slots={tiles.length}>
+<section
+  class:list={['board', { crowded: tiles.length >= 5 || rack.length >= 9 }]}
+  data-answer={tiles.join('')}
+  data-slots={tiles.length}
+>
   <h2 class="sr-only">કોયડો / Puzzle</h2>
 
-  <div class="pics">
+  <!-- Everything inside .play has to be visible at once on a phone: you cannot
+       compare four pictures while the letters are off screen. -->
+  <div class="play">
+    <div class="pics">
     {
       [1, 2, 3, 4].map((n) => (
         <img
@@ -51,14 +58,9 @@ for (let i = rack.length - 1; i > 0; i--) {
           loading={n > 2 ? 'lazy' : 'eager'}
           decoding="async"
         />
-      ))
-    }
-  </div>
-
-  <p class="prompt">
-    આ ચાર ચિત્રોનો શબ્દ બનાવો
-    <span class="en">Build the word these four pictures share</span>
-  </p>
+        ))
+      }
+    </div>
 
   <!-- Answer slots. Always real buttons: tap a filled one to take the tile back. -->
   <div class="slots" role="group" aria-label="જવાબની જગ્યાઓ / Answer slots">
@@ -71,7 +73,15 @@ for (let i = rack.length - 1; i > 0; i--) {
     }
   </div>
 
-  <p class="status" role="status" aria-live="polite"></p>
+  <!-- One text band: the instruction while the slots are still filling, the
+       verdict once they are full. A separate always-on prompt plus a separate
+       status line cost a phone screen roughly a whole picture's worth of
+       height, and the two never both matter at the same moment. -->
+  <p class="status" role="status" aria-live="polite">
+    <span class="status-gu">આ ચાર ચિત્રોનો શબ્દ બનાવો</span><span class="en"
+      >Build the word these four pictures share</span
+    >
+  </p>
 
   <div class="rack" role="group" aria-label="અક્ષરો / Letters">
     {
@@ -81,6 +91,8 @@ for (let i = rack.length - 1; i > 0; i--) {
         </button>
       ))
     }
+  </div>
+
   </div>
 
   <div class="controls">
@@ -121,7 +133,9 @@ for (let i = rack.length - 1; i > 0; i--) {
     const answer = board.dataset.answer ?? '';
     const slots = [...board.querySelectorAll<HTMLButtonElement>('.slot')];
     const tiles = [...board.querySelectorAll<HTMLButtonElement>('.tile')];
-    const status = board.querySelector<HTMLElement>('.status')!;
+    const statusGu = board.querySelector<HTMLElement>('.status-gu')!;
+    const statusEn = board.querySelector<HTMLElement>('.status .en')!;
+    const IDLE: [string, string] = ['આ ચાર ચિત્રોનો શબ્દ બનાવો', 'Build the word these four pictures share'];
     const win = board.querySelector<HTMLElement>('.win')!;
     // slot index -> rack tile index currently sitting in it
     const placed: (number | null)[] = slots.map(() => null);
@@ -148,10 +162,13 @@ for (let i = rack.length - 1; i > 0; i--) {
       });
     }
 
-    function setState(kind: 'idle' | 'wrong' | 'correct', message = '') {
+    function setState(kind: 'idle' | 'wrong' | 'correct', gu = '', en = '') {
       board.classList.remove('is-wrong', 'is-correct');
       if (kind !== 'idle') board.classList.add(`is-${kind}`);
-      status.textContent = message;
+      // Idle falls back to the instruction, so the band is never blank and
+      // never changes height.
+      statusGu.textContent = kind === 'idle' ? IDLE[0] : gu;
+      statusEn.textContent = kind === 'idle' ? IDLE[1] : en;
     }
 
     function check() {
@@ -161,12 +178,12 @@ for (let i = rack.length - 1; i > 0; i--) {
       }
       const guess = placed.map((p) => glyphOf(tiles[p!])).join('');
       if (guess === answer) {
-        setState('correct', '✓ સાચું! / Correct!');
+        setState('correct', '✓ સાચું!', 'Correct!');
         win.hidden = false;
         win.querySelector<HTMLElement>('.btn')?.focus();
       } else {
         // No penalty. Nothing is lost, nothing locks. Just say so and wait.
-        setState('wrong', '✗ હજી બરાબર નથી — કોઈ પણ અક્ષર દબાવીને પાછો લો. / Not yet — tap any letter to take it back.');
+        setState('wrong', '✗ હજી બરાબર નથી — અક્ષર દબાવીને પાછો લો.', 'Not yet — tap a letter to take it back.');
       }
     }
 
@@ -222,27 +239,29 @@ for (let i = rack.length - 1; i > 0; i--) {
     white-space: nowrap;
   }
 
+  /* The 2x2 is a square box: two square cells plus one gap in each axis. Making
+     the BOX square (rather than each image) means its height can be driven by
+     the flex column below and its width follows — which is how the pictures
+     give up space to the rack on a short phone instead of pushing it off screen. */
   .pics {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    aspect-ratio: 1;
     gap: 10px;
     margin-bottom: 1.5rem;
+    margin-inline: auto;
+    max-width: 100%;
   }
   .pics img {
     width: 100%;
-    height: auto;
-    aspect-ratio: 1;
+    height: 100%;
+    min-height: 0;
     object-fit: cover;
     display: block;
     border: 3px solid var(--line-strong);
     border-radius: var(--radius);
     background: #eee;
-  }
-
-  .prompt {
-    text-align: center;
-    font-weight: 600;
-    margin-bottom: 1rem;
   }
 
   /* --- answer slots ------------------------------------------------------- */
@@ -291,6 +310,9 @@ for (let i = rack.length - 1; i > 0; i--) {
     font-size: 0.82em;
     font-weight: 600;
     margin: 0 0 0.75rem;
+  }
+  .status .en {
+    display: block;
   }
   .is-wrong .status {
     color: var(--warn);
@@ -376,19 +398,160 @@ for (let i = rack.length - 1; i > 0; i--) {
     font-weight: 600;
   }
 
-  /* One-handed at 400px: everything still clears the 64px target. */
-  @media (max-width: 420px) {
+  /* ---------------------------------------------------------------------
+     PHONES. The whole point of this game is comparing four pictures WHILE
+     choosing letters, so pictures + slots + rack have to share one screen.
+     The fixed-height parts (text band, slots, rack) are laid out first and
+     the picture grid takes whatever height is left — it is `flex: 1` with a
+     square aspect-ratio, so it shrinks instead of shoving the rack below the
+     fold. Nothing here shrinks a tap target below --tap (64px).
+     --------------------------------------------------------------------- */
+  @media (max-width: 560px), (max-height: 560px) {
+    .play {
+      display: flex;
+      flex-direction: column;
+      /* A HEIGHT, not a min-height: the box has to be able to squeeze the
+         pictures, and flex items only shrink when the container is smaller
+         than their content. svh, not vh: vh is the viewport at its TALLEST,
+         so a vh layout always overflows while the browser bar is showing. */
+      height: calc(100svh - var(--chrome) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    }
+    .status,
+    .slots,
+    .rack {
+      flex: none;
+    }
+
+    .pics {
+      flex: 1 1 auto;
+      min-height: 120px;
+      gap: 6px;
+      margin-bottom: 0.5rem;
+    }
+    .pics img {
+      border-width: 2px;
+    }
+
+    /* Long words (5 slots and/or 9 tiles) need two rows of slots and three of
+       rack, which squeezes a square 2x2 down to ~57px a picture. A single row
+       of four is BOTH shorter and bigger: at 375px each picture is ~80px wide
+       against ~57px squeezed, and the block costs 80px of height instead of
+       120px. Scanning left-to-right is no worse than a 2x2 for four clues. */
+    .crowded .pics {
+      flex: 0 0 auto;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: 1fr;
+      aspect-ratio: auto;
+      min-height: 0;
+      width: 100%;
+    }
+    .crowded .pics img {
+      height: auto;
+      aspect-ratio: 1;
+    }
+    /* Nothing left to give on a 320px screen: claw back the last few pixels
+       from the gaps rather than from a tap target. */
+    .crowded .pics,
+    .crowded .slots {
+      margin-bottom: 0.3rem;
+    }
+    .crowded .status {
+      margin-bottom: 0.3rem;
+    }
+
+    .status {
+      min-height: 1.9em;
+      font-size: 0.66em;
+      margin-bottom: 0.4rem;
+    }
+    /* The English gloss is a courtesy for a Gujarati-reading audience; on a
+       phone it costs a whole line of the tightest band on the screen. */
+    .status .en {
+      display: none;
+    }
+
+    .slots,
+    .rack {
+      /* Four cells to a row, never narrower than the 64px tap minimum. */
+      --cell: clamp(64px, calc((100% - 3 * var(--cell-gap)) / 4), 84px);
+      --cell-gap: 8px;
+      gap: var(--cell-gap);
+    }
     .slot,
     .tile {
-      width: 72px;
-      height: 72px;
-      font-size: 2.1rem;
+      width: var(--cell);
+      /* aspect-ratio, not `height: var(--cell)`: --cell is a % of the row's
+         WIDTH, and a percentage height would resolve against the row's
+         (auto) height instead and silently collapse to the 64px floor. */
+      aspect-ratio: 1;
+      height: auto;
+      font-size: clamp(1.7rem, 7.5vw, 2.3rem);
     }
     .slots {
-      gap: 10px;
+      margin-bottom: 0.4rem;
     }
+    /* The rack's card frame is pure decoration and costs ~30px of the one
+       screen that matters. The tiles already read as buttons. */
     .rack {
-      gap: 12px;
+      padding: 0;
+      border: 0;
+      background: none;
+    }
+    .controls {
+      margin-top: 0.75rem;
     }
   }
+
+  /* Landscape on a phone: no vertical room at all, so put the pictures beside
+     the letters rather than above them. Rows are placed explicitly so the
+     picture block spans the whole playing column. */
+  @media (orientation: landscape) and (max-height: 560px) {
+    .play {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
+      column-gap: 1rem;
+      align-content: center;
+      min-height: calc(100svh - var(--chrome));
+    }
+    .pics {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+      height: calc(100svh - var(--chrome) - 1rem);
+      width: auto;
+      max-width: 45vw;
+      margin: 0;
+      align-self: center;
+    }
+    .slots {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .status {
+      grid-column: 2;
+      grid-row: 2;
+    }
+    .rack {
+      grid-column: 2;
+      grid-row: 3;
+    }
+    /* Wide-and-short: fit as many tiles per row as 64px allows rather than the
+       portrait four, so the rack is one row instead of two. */
+    .slots,
+    .rack {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+      justify-items: center;
+      gap: 8px;
+    }
+    .slot,
+    .tile {
+      width: 100%;
+      max-width: 84px;
+    }
+    .controls {
+      margin-top: 0.75rem;
+    }
+  }
+
 </style>
