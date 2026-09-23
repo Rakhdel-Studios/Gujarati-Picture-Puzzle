@@ -11,6 +11,6 @@
     "import-data": "node scripts/import-data.mjs"
   },
   "dependencies": {
-    "astro": "^5.15.9"
+    "astro": "^7.3.4"
   }
 }
